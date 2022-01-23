@@ -1,1 +1,3 @@
-export const greeting = 'Hello world';
+const greeting = 'Hello world';
+
+document.body.textContent = greeting;
