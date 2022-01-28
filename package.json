@@ -8,6 +8,10 @@
     "start": "cross-env NODE_ENV=development rollup -w -c --configPlugin typescript",
     "build": "npm run clean && cross-env NODE_ENV=production rollup -c --configPlugin typescript"
   },
+  "engines": {
+    "node": ">= 16.0.0",
+    "npm": ">= 8.0.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
