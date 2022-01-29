@@ -1,5 +1,8 @@
 import jetbrains.buildServer.configs.kotlin.v2019_2.*
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildFeatures.sshAgent
 import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.nodeJS
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.script
+import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.sshExec
 import jetbrains.buildServer.configs.kotlin.v2019_2.triggers.vcs
 import jetbrains.buildServer.configs.kotlin.v2019_2.vcs.GitVcsRoot
 
@@ -30,8 +33,10 @@ version = "2021.2"
 project {
 
     vcsRoot(HttpsGithubComKenjiruTeamcityConfigRefsHeadsMaster)
+    vcsRoot(GitGithubComKenjiruTeamcityConfigGit)
 
     buildType(Build)
+    buildType(DeployToDokku)
 }
 
 object Build : BuildType({
@@ -58,6 +63,63 @@ object Build : BuildType({
     triggers {
         vcs {
         }
+    }
+})
+
+object DeployToDokku : BuildType({
+    name = "Deploy to Dokku"
+    description = "Deploy master to Dokku"
+
+    enablePersonalBuilds = false
+    type = BuildTypeSettings.Type.DEPLOYMENT
+    maxRunningBuilds = 1
+
+    vcs {
+        root(GitGithubComKenjiruTeamcityConfigGit)
+    }
+
+    steps {
+        script {
+            name = "Deploy to Dokku"
+            scriptContent = """
+                #git remote remove dokku
+                #git remote add dokku ssh://dokku@dokku/node-test
+                #git push dokku master
+                
+                git remote -v
+                git remote set-url --push origin ssh://dokku@dokku/node-test
+                git remote -v
+                git push
+            """.trimIndent()
+        }
+        sshExec {
+            name = "Run Dokku commands"
+            enabled = false
+            commands = "apps:list"
+            targetUrl = "dokku"
+            authMethod = uploadedKey {
+                username = "dokku"
+                key = "Teamcity Private Key"
+            }
+        }
+    }
+
+    features {
+        sshAgent {
+            teamcitySshKey = "Teamcity Private Key"
+        }
+    }
+})
+
+object GitGithubComKenjiruTeamcityConfigGit : GitVcsRoot({
+    name = "git@github.com:kenjiru/teamcity-config.git"
+    pollInterval = 5
+    url = "git@github.com:kenjiru/teamcity-config.git"
+    pushUrl = "dokku@dokku:node-test"
+    branch = "master"
+    userNameStyle = GitVcsRoot.UserNameStyle.NAME
+    authMethod = uploadedKey {
+        uploadedKey = "Teamcity Private Key"
     }
 })
 
