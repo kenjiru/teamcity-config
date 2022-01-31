@@ -106,6 +106,7 @@ object DeployToDokku : BuildType({
 
     features {
         sshAgent {
+            enabled = false
             teamcitySshKey = "Teamcity Private Key"
         }
     }
